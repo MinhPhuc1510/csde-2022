@@ -209,6 +209,7 @@
     <div class="header">
         <img class="image_1" src="http://rubee.com.vn/admin/webroot/upload/image//images/tin-tuc/logo-bach-khoa-ho-chi-minh.jpg" alt="BK">
         <h1 style="margin: 20 20 20 200;font-size: 35;color: white;"> Employees </h1>
+        <a href="{% url 'user_logout' %}" style="top:20;right:20;position: absolute;color: gray;">Logout</a>
     </div>
     <div class="parent">
         <div class="sidenav">
@@ -305,7 +306,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                        <a class="btn btn-primary" href="{% url 'form_department_employee' data.0.business_entity_id %}" style="right:200px;position:absolute;width:100px;color:white;background-color: blue;">Update</a>
+                        <a class="btn btn-primary" href="{% url 'form_department_employee' data.0.business_entity_id %}" style="right:200px;position:absolute;width:100px;color:white;background-color: blue;bottom: 10px;">Update</a>
                   </div>
                 </div>
               </div>
