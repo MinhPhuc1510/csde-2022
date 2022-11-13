@@ -23,7 +23,7 @@
                 background-color: #333333;
                 overflow-x: hidden;
                 padding-top: 20px;
-                opacity: 0.8;
+                opacity: 1;
 
             }
 
@@ -57,7 +57,7 @@
                 
             }
 
-            h1,span{
+            /* h1,span{
                 color: #fff;
                 font-size: 18px;
                 margin-left:0;
@@ -65,7 +65,7 @@
                 margin-bottom: 20px;
         
        
-            }
+            } */
 
             .dashboard{
                 margin-top: 100px;
@@ -207,13 +207,13 @@
         <div class="grandparent">
     <div class="header">
         <img class="image_1" src="http://rubee.com.vn/admin/webroot/upload/image//images/tin-tuc/logo-bach-khoa-ho-chi-minh.jpg" alt="BK">
-        <h1 style="margin: 20 20 20 200;font-size: 35;"> Employees </h1>
+        <h1 style="margin: 20 20 20 200;font-size: 35;color:white;"> Employees </h1>
     </div>
     <div class="parent">
         <div class="sidenav">
             <div class="content">
-                <h1>
-                    HUMAN  RESOURCE
+                <h1 style="color: yellow">
+                    HUMAN  RESOURCES
                 </h1>
                     <hr style="width:100%;text-align:left;margin-left:0;">
             </div>
@@ -229,8 +229,7 @@
             <div class=" department">
                 <a href="{% url 'departments' %}" > <i class="fas fa-building"></i> Department </a>
             </div>
-                
-            
+                     
         </div>
         <div class="report">
             <div class="container">
@@ -278,6 +277,9 @@
                             </tr>
                         </tfoot> -->
                     </table>
+                    <div class="add_user">
+                        <!-- <a href=""> <i class="fa-solid fa-user-plus" style="color:red;position: relative"> ABCDEF</i></a> -->
+                    </div>
                   </div>
                 </div>
               </div>
@@ -288,6 +290,13 @@
         <div id="content", name="content", class="main" >
             {% block content %}
             {% endblock %}
+        </div>
+        <div> 
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags %}  <script>alert("{{ message }}")</script> {% endif %}
+                {% endfor %}
+            {% endif %}
         </div>
         <script src="//code.jquery.com/jquery-1.12.4.js"></script>
         <script src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>

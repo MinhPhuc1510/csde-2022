@@ -3,6 +3,7 @@
     <head>
         {% block style %}
         <link rel="stylesheet" type="text/css" href="{% static "fontawesome/css/all.min.css" %}" />
+        <meta charset="utf-8">
         <meta name="description" content="Rolling Stone magazine's 2012 list of 500 greatest albums of all time with genres.">
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.css">
         <link rel="stylesheet" href="//cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.min.css">
@@ -19,7 +20,7 @@
                 background-color: #333333;
                 overflow-x: hidden;
                 padding-top: 20px;
-                opacity: 0.8;
+                opacity: 1;
 
             }
 
@@ -37,7 +38,7 @@
 
             }
             .sidenav a:hover{
-                color: #003300;
+                color: black;
             }
             .title{
                 
@@ -52,7 +53,7 @@
                 text-align: center;          
                 
             }
-
+/* 
             h1{
                 color: #fff;
                 font-size: 18px;
@@ -61,7 +62,7 @@
                 margin-bottom: 20px;
         
        
-            }
+            } */
 
             .dashboard{
                 margin-top: 100px;
@@ -135,10 +136,9 @@
     <div class="parent">
         <div class="sidenav">
             <div class="content">
-                <h1>
-                    HUMAN  RESOURCE
+                <h1 style="color: yellow">
+                    HUMAN  RESOURCES
                 </h1>
-              
             </div>
  
             <div class=" dashboard">

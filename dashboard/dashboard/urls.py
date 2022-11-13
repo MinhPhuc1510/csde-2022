@@ -24,8 +24,6 @@ urlpatterns = [
     path("", include("front_end.urls")),
     path("", include("backend.urls")),
     # path('', include('front_end.urls')),
-    
-    
 
 ]
 
