@@ -29,7 +29,7 @@ class Redshift():
         self.host = ''
         self.database = ''
         self.user = ''
-        self.password = '!'
+        self.password = ''
 
         #Connect to the cluster
         self.conn = redshift_connector.connect(

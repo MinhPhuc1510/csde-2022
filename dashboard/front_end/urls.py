@@ -1,5 +1,5 @@
-from django.urls import path, include
-from .views import index, home
+from django.urls import path
+from .views import index
 
 urlpatterns = [
 

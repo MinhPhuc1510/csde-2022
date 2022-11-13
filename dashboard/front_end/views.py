@@ -1,13 +1,14 @@
 from email.policy import HTTP
 from django.shortcuts import render
-from django.contrib.auth import authenticate, login
-
+from django.contrib.auth import authenticate, login, logout
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 # Create your views here.
-
 def index(request):
   
   iframe = ""
+  context = {'iframe': iframe}
   return render(request, 'Dashboard.html', context)
 
 def home(request):
@@ -34,3 +35,7 @@ def user_login(request):
     else:
         # No post data availabe, let's just show the page to the user.
         return render(request, 'login.html')
+
+def user_out(request):
+    logout(request)
+    return render(request, 'login.html')

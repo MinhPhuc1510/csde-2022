@@ -1,18 +1,18 @@
 
 import json
 import logging
-import datetime
-import uuid
 
 import pandas as pd
 import redshift_connector
+from backend.forms.employees import DepartmentForm, EmployeeForm
 from backend.utils.redshif import Redshift
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from backend.forms.employees import EmployeeForm, DepartmentForm
 from rest_framework import status
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +23,7 @@ _logger = logging.getLogger(__name__)
 class EmployeeView(APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = 'employees.html'
+    permission_classes = [IsAuthenticated]
     
     def get(self, request):
         _logger.info('Start Get employees')
@@ -60,6 +61,8 @@ class EmployeeView(APIView):
 class DetailEmployeeView(APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = 'get_detail_employee.html'
+    permission_classes = [IsAuthenticated]
+    
     
     # conn.autocommit = True
     # conn.run("VACUUM")
@@ -69,14 +72,12 @@ class DetailEmployeeView(APIView):
         _logger.info('Connect to Redshif')
         conn = Redshift().conn
         cursor = conn.cursor()
-
-        # Query a table using the Cursor
-        cursor.execute(f"SELECT p.business_entity_id,p.first_name,p.last_name,e.birth_date,e.salaried_flag,e.vacation_hours,e.sick_leave_hours,e.hire_date,e.gender,e.job_title,dt.name,d.start_date,d.end_date, py.rate \
+       
+        cursor.execute(f"SELECT p.business_entity_id,p.first_name,p.last_name,e.birth_date,e.salaried_flag,e.vacation_hours,e.sick_leave_hours,e.hire_date,e.gender,e.job_title,dt.name,d.start_date,d.end_date \
                         FROM adventureworks2008r2_person.person p \
                         INNER JOIN adventureworks2008r2_humanresources.employee e ON p.business_entity_id=e.business_entity_id \
                         INNER JOIN adventureworks2008r2_humanresources.employee_department_history d ON p.business_entity_id=d.business_entity_id \
                         INNER JOIN adventureworks2008r2_humanresources.department dt ON d.department_id=dt.department_id    \
-                        INNER JOIN adventureworks2008r2_humanresources.employee_pay_history py ON p.business_entity_id=py.business_entity_id \
                         WHERE p.business_entity_id={id};")
         
         query = cursor.fetchall()
@@ -86,24 +87,34 @@ class DetailEmployeeView(APIView):
         }
             return Response(data=respones, status=status.HTTP_404_NOT_FOUND)
         df = pd.DataFrame(query)
-        df.columns = ['business_entity_id', 'first_name', 'last_name', 'birth_date', 'salaried_flag', 'vacation_hours', 'sick_leave_hours', 'hire_date', 'gender', 'job_title', 'name', 'start_date', 'end_date', 'rate']
+        df.columns = ['business_entity_id', 'first_name', 'last_name', 'birth_date', 'salaried_flag', 'vacation_hours', 'sick_leave_hours', 'hire_date', 'gender', 'job_title', 'name', 'start_date', 'end_date']
         df['birth_date'] = pd.to_datetime(df['birth_date']).astype(str)
         df['hire_date'] = pd.to_datetime(df['hire_date']).astype(str)
         df['start_date'] = pd.to_datetime(df['start_date']).astype(str)
         df['end_date'] = pd.to_datetime(df['end_date']).astype(str)
 
-        result = df.to_json(orient="records")
+        cursor.execute(f"SELECT rate \
+                        FROM adventureworks2008r2_humanresources.employee_pay_history \
+                        WHERE business_entity_id={id};")
+
+        result = json.loads(df.to_json(orient="records"))
+       
+        query = cursor.fetchall()[0][0]
+        result[0] =  result[0] | {"rate":query}
+
         respones = {
-            'data': json.loads(result)
+            'data': result
         }
         _logger.info('End Get detail employee')
 
         return Response(data=respones, status=status.HTTP_200_OK)
 
+@permission_classes([IsAuthenticated])
 def alert_delete(request, id):
   contex = {'id': id}
   return render(request, 'alert_delete.html', contex)
 
+@permission_classes([IsAuthenticated])
 def delete_employee(request, id):
     _logger.info('Start Delete detail employee')
     # Create a Cursor object
@@ -123,6 +134,7 @@ def delete_employee(request, id):
     messages.info(request, 'Delete successfully!')
     return HttpResponseRedirect(reverse('employees'))
 
+@permission_classes([IsAuthenticated])
 def update_employee(request, id):
     # if this is a POST request we need to process the form data
     if request.method == 'POST':
@@ -201,7 +213,7 @@ def update_employee(request, id):
 class DepartmentView(APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = 'departments.html'
-   
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         _logger.info('Start Get deparment')
         self.http_method_names.append("GET")
@@ -235,7 +247,7 @@ class DepartmentView(APIView):
 
         return Response(data=respones, status=status.HTTP_200_OK)
 
-
+@permission_classes([IsAuthenticated])
 def delete_employee(request, id):
     _logger.info('Start Delete detail employee')
     # Create a Cursor object
@@ -259,6 +271,7 @@ def delete_employee(request, id):
     messages.info(request, 'Delete successfully!')
     return HttpResponseRedirect(reverse('employees'))
 
+@permission_classes([IsAuthenticated])
 def update_employee_department(request, id):
     # if this is a POST request we need to process the form data
     conn = Redshift().conn
@@ -281,6 +294,7 @@ def update_employee_department(request, id):
             result = cursor.fetchall()
             value = ','.join(f"{key}='{form.cleaned_data[key]}'" for key in form.cleaned_data if key!='department')
             value = value + f',department_id={result[0][0]}'
+            value = value.replace("'None'", "null ")
             query = f"UPDATE adventureworks2008r2_humanresources.employee_department_history \
                     SET {value} \
                     WHERE business_entity_id={id};"
