@@ -26,10 +26,10 @@ class Redshift():
     """
 
     def __init__(self):
-        self.host = 'redshift-cluster-2.c0aj3jsyg3kb.ap-northeast-1.redshift.amazonaws.com'
-        self.database = 'dev'
-        self.user = 'awsuser'
-        self.password = '!Admin123456'
+        self.host = ''
+        self.database = ''
+        self.user = ''
+        self.password = '!'
 
         #Connect to the cluster
         self.conn = redshift_connector.connect(

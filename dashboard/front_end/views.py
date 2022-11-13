@@ -1,15 +1,36 @@
 from email.policy import HTTP
 from django.shortcuts import render
+from django.contrib.auth import authenticate, login
+
 
 # Create your views here.
 
 def index(request):
-  # iframe = "https://app.powerbi.com/reportEmbed?reportId=12ac76ce-365c-4792-88ad-51c30b10eb49&autoAuth=true&ctid=7bbbced8-b31a-4a36-95bb-9f06bc9d72a6"
-  iframe = "https://app.powerbi.com/reportEmbed?reportId=7dee1973-f2d5-4093-8b85-d7931e3ca7e2&autoAuth=true&ctid=7bbbced8-b31a-4a36-95bb-9f06bc9d72a6"
-  context = {'iframe': iframe}
+  
+  iframe = ""
   return render(request, 'Dashboard.html', context)
 
 def home(request):
-  iframe = "https://app.powerbi.com/reportEmbed?reportId=7dee1973-f2d5-4093-8b85-d7931e3ca7e2&autoAuth=true&ctid=7bbbced8-b31a-4a36-95bb-9f06bc9d72a6"
+  iframe = ""
   context = {'iframe': iframe}
   return render(request, 'home.html', context)
+
+
+def user_login(request):
+    if request.method == 'POST':
+        # Process the request if posted data are available
+        username = request.POST['username']
+        password = request.POST['password']
+        # Check username and password combination if correct
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            # Save session as cookie to login the user
+            login(request, user)
+            # Success, now let's login the user.
+            return render(request, 'home.html')
+        else:
+            # Incorrect credentials, let's throw an error to the screen.
+            return render(request, 'login.html', {'error_message': 'Incorrect username and / or password.'})
+    else:
+        # No post data availabe, let's just show the page to the user.
+        return render(request, 'login.html')
