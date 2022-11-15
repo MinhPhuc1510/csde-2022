@@ -132,7 +132,7 @@
         <div class="grandparent">
     <div class="header">
         <img class="image_1" src="http://rubee.com.vn/admin/webroot/upload/image//images/tin-tuc/logo-bach-khoa-ho-chi-minh.jpg" alt="BK">
-        <a href="{% url 'user_logout' %}" style="top:20;right:20;position: absolute;color: gray;">Logout</a>  
+        <a href="{% url 'user_logout' %}" style="top:20;right:20;position: absolute;color: gray;">Logout</a> 
     </div>
     <div class="parent">
         <div class="sidenav">
@@ -140,6 +140,10 @@
                 <h1 style="color: yellow">
                     HUMAN  RESOURCES
                 </h1>
+                <div style="display: flex;flex-direction: column;">
+                    <img class="image_1" src="http://demo.viewflow.io/static/material/imgs/user.346c12c47d28.png" style="border-radius:50%;" alt="BK">
+                    <span style="color: white;margin-left: 45px ;font-size: 20; text-transform: capitalize;">{{request.user}}</span> 
+                </div>
             </div>
  
             <div class=" dashboard">
@@ -169,6 +173,7 @@
         </div>
         <div id="content", name="content", class="main" >
             {% block content %}
+    
             {% endblock %}
         </div>
     </body>
