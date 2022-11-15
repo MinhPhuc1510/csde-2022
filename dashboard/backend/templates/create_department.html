@@ -57,7 +57,7 @@
                 
             }
 
-            h1,span{
+            /* h1,span{
                 color: #fff;
                 font-size: 18px;
                 margin-left:0;
@@ -65,7 +65,7 @@
                 margin-bottom: 20px;
         
        
-            }
+            } */
 
             .dashboard{
                 margin-top: 100px;
@@ -207,7 +207,7 @@
         <div class="grandparent">
     <div class="header">
         <img class="image_1" src="http://rubee.com.vn/admin/webroot/upload/image//images/tin-tuc/logo-bach-khoa-ho-chi-minh.jpg" alt="BK">
-        <h1 style="margin: 20 20 20 200;font-size: 35;color: white;"> Employees </h1>
+        <h1 style="margin: 20 20 20 200;font-size: 35;color: white;"> Departments </h1>
         <a href="{% url 'user_logout' %}" style="top:20;right:20;position: absolute;color: gray;">Logout</a>
     </div>
     <div class="parent">
@@ -234,7 +234,7 @@
             
         </div>
         <div class="report">
-            <form action="{% url 'form_employee' id %}" method="post">
+            <form action="{% url 'create_department' %}" method="post">
                 {% csrf_token %}
                 <table id="example" class="display">
                     {{ form.as_table }}
@@ -244,8 +244,6 @@
         </div>
         
     </div>
-        </div>
-        <div> 
         </div>
         <div id="content", name="content", class="main" >
             {% block content %}

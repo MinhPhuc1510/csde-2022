@@ -4,7 +4,7 @@ import logging
 
 import pandas as pd
 import redshift_connector
-from backend.forms.employees import DepartmentForm, EmployeeForm
+from backend.forms.employees import DepartmentForm, EmployeeForm, CreateDepartmentForm
 from backend.utils.redshif import Redshift
 from django.contrib import messages
 from django.http import HttpResponseRedirect
@@ -16,10 +16,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import datetime
 
 _logger = logging.getLogger(__name__)
 # Create your views here.
-
+connect = Redshift().conn
 class EmployeeView(APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = 'employees.html'
@@ -29,8 +30,7 @@ class EmployeeView(APIView):
         _logger.info('Start Get employees')
         # Create a Cursor object
         _logger.info('Connect to Redshif')
-        conn = Redshift().conn
-        cursor = conn.cursor()
+        cursor = connect.cursor()
 
         # Query a table using the Cursor
         cursor.execute("SELECT p.business_entity_id,p.first_name,p.last_name,e.birth_date,e.salaried_flag,e.vacation_hours,e.sick_leave_hours \
@@ -39,6 +39,7 @@ class EmployeeView(APIView):
         #Retrieve the query result set
         
         query = cursor.fetchall()
+        connect.commit()
 
         if len(query) == 0:
             respones = {
@@ -64,14 +65,12 @@ class DetailEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
     
     
-    # conn.autocommit = True
-    # conn.run("VACUUM")
+
     def get(self, request, id):
         _logger.info('Start Get detail employee')
         # Create a Cursor object
         _logger.info('Connect to Redshif')
-        conn = Redshift().conn
-        cursor = conn.cursor()
+        cursor = connect.cursor()
        
         cursor.execute(f"SELECT p.business_entity_id,p.first_name,p.last_name,e.birth_date,e.salaried_flag,e.vacation_hours,e.sick_leave_hours,e.hire_date,e.gender,e.job_title,dt.name,d.start_date,d.end_date \
                         FROM adventureworks2008r2_person.person p \
@@ -93,14 +92,15 @@ class DetailEmployeeView(APIView):
         df['start_date'] = pd.to_datetime(df['start_date']).astype(str)
         df['end_date'] = pd.to_datetime(df['end_date']).astype(str)
 
-        cursor.execute(f"SELECT rate \
-                        FROM adventureworks2008r2_humanresources.employee_pay_history \
-                        WHERE business_entity_id={id};")
-
+        cursor.execute(f"SELECT rate FROM adventureworks2008r2_humanresources.employee_pay_history \
+                        WHERE modified_date=(SELECT max(modified_date) FROM adventureworks2008r2_humanresources.employee_pay_history \
+                        WHERE business_entity_id={id}) AND business_entity_id={id};")
         result = json.loads(df.to_json(orient="records"))
-       
-        query = cursor.fetchall()[0][0]
-        result[0] =  result[0] | {"rate":query}
+        rate = cursor.fetchall()
+        connect.commit()
+        if len(rate) !=0 :
+            query = rate[0][0]
+            result[0] =  result[0] | {"rate":query}
 
         respones = {
             'data': result
@@ -119,15 +119,12 @@ def delete_employee(request, id):
     _logger.info('Start Delete detail employee')
     # Create a Cursor object
     _logger.info('Connect to Redshif')
-    conn = Redshift().conn
-    conn.autocommit = True
-    conn.run("VACUUM")
-    cursor = conn.cursor()
+    cursor = connect.cursor()
     
     try:
         cursor.execute(f"DELETE FROM adventureworks2008r2_humanresources.employee \
         WHERE business_entity_id={id};")
-        conn.autocommit = False          
+        connect.commit()         
     except redshift_connector.error.ProgrammingError :
         messages.info(request, 'Failed!')
         return HttpResponseRedirect(reverse('employees'))
@@ -142,10 +139,7 @@ def update_employee(request, id):
         form = EmployeeForm(request.POST)
         # check whether it's valid:
         if form.is_valid():
-            conn = Redshift().conn
-            conn.autocommit = True
-            conn.run("VACUUM")
-            cursor = conn.cursor()
+            cursor = connect.cursor()
             value = ','.join(f"{key}='{form.cleaned_data[key]}'" for key in form.cleaned_data if key in ['birth_date', 'hire_date', 'gender', 'job_title'])
             query = f"UPDATE adventureworks2008r2_humanresources.employee \
                     SET {value} \
@@ -165,15 +159,14 @@ def update_employee(request, id):
                     SET {value_3} \
                     WHERE business_entity_id={id};"
             cursor.execute(query_3)
-            conn.autocommit = False
+            connect.commit()
 
             messages.info(request, 'Update sucessfully')
             return HttpResponseRedirect(reverse('detai_employee',args=(id,)))
     
     # if a GET (or any other method) we'll create a blank form
     elif request.method == 'GET':
-        conn = Redshift().conn
-        cursor = conn.cursor()
+        cursor = connect.cursor()
 
         # Query a table using the Cursor
         cursor.execute(f"SELECT p.business_entity_id,p.first_name,p.last_name,e.birth_date,e.salaried_flag,e.vacation_hours,e.sick_leave_hours,e.hire_date,e.gender,e.job_title,dt.name,d.start_date,d.end_date \
@@ -184,6 +177,7 @@ def update_employee(request, id):
                         WHERE p.business_entity_id={id};")
         
         query = cursor.fetchall()
+        connect.commit()
         if len(query) == 0:
             respones = {
             'data': None
@@ -219,19 +213,18 @@ class DepartmentView(APIView):
         self.http_method_names.append("GET")
         # Create a Cursor object
         _logger.info('Connect to Redshif')
-        conn = Redshift().conn
-        cursor = conn.cursor()
+        cursor = connect.cursor()
 
         # Query a table using the Cursor
-        cursor.execute("SELECT p.department_id,p.name,p.group_name,COUNT(*) employess \
+        cursor.execute("SELECT p.department_id,p.name,p.group_name,COUNT(e.department_id) employess \
                         FROM adventureworks2008r2_humanresources.department p \
-                        RIGHT JOIN adventureworks2008r2_humanresources.employee_department_history e ON p.department_id=e.department_id \
-                        INNER JOIN adventureworks2008r2_humanresources.employee em ON e.business_entity_id=em.business_entity_id \
+                        LEFT JOIN adventureworks2008r2_humanresources.employee_department_history e ON p.department_id=e.department_id \
                         GROUP BY p.department_id,p.name,p.group_name;")
          
         #Retrieve the query result set
         
         query = cursor.fetchall()
+        connect.commit()
         if len(query) == 0:
             respones = {
             'data': None
@@ -254,16 +247,13 @@ def delete_employee(request, id):
     _logger.info('Connect to Redshif')
  
     try:
-        conn = Redshift().conn
-        conn.autocommit = True
-        conn.run("VACUUM")
-        cursor = conn.cursor()
+        cursor = connect.cursor()
         cursor.execute(f"DELETE FROM adventureworks2008r2_humanresources.employee \
         WHERE business_entity_id={id};")
 
         cursor.execute(f"DELETE FROM adventureworks2008r2_humanresources.employee_department_history \
         WHERE business_entity_id={id};")
-        conn.autocommit = False
+        connect.commit()
 
     except redshift_connector.error.ProgrammingError :
         messages.info(request, 'Failed!')
@@ -274,10 +264,8 @@ def delete_employee(request, id):
 @permission_classes([IsAuthenticated])
 def update_employee_department(request, id):
     # if this is a POST request we need to process the form data
-    conn = Redshift().conn
-    conn.autocommit = True
-    conn.run("VACUUM")
-    cursor = conn.cursor()
+
+    cursor = connect.cursor()
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
         form = DepartmentForm(request.POST)
@@ -297,11 +285,15 @@ def update_employee_department(request, id):
             value = value.replace("'None'", "null ")
             query = f"UPDATE adventureworks2008r2_humanresources.employee_department_history \
                     SET {value} \
-                    WHERE business_entity_id={id};"
+                    WHERE business_entity_id={id} AND modified_date=(SELECT max(modified_date) FROM adventureworks2008r2_humanresources.employee_department_history \
+                    WHERE business_entity_id={id});"
             cursor.execute(query)
-            conn.autocommit = False
+            connect.commit()
 
             messages.info(request, 'Update sucessfully')
+            return HttpResponseRedirect(reverse('detai_employee',args=(id,)))
+        else:
+            messages.info(request, 'Can not update data (data invalid)')
             return HttpResponseRedirect(reverse('detai_employee',args=(id,)))
     
     # if a GET (or any other method) we'll create a blank form
@@ -315,6 +307,7 @@ def update_employee_department(request, id):
                         WHERE p.business_entity_id={id};")
         
         query = cursor.fetchall()
+        connect.commit()
         if len(query) == 0:
             return HttpResponseRedirect(reverse('detai_employee',args=(id,)))
         df = pd.DataFrame(query)
@@ -334,3 +327,33 @@ def update_employee_department(request, id):
         form_data = DepartmentForm(form_data)
 
         return render(request, 'department_employee_form.html', {'form': form_data, 'id':id})
+
+@permission_classes([IsAuthenticated])
+def create_department(request):
+    # if this is a POST request we need to process the form data
+
+    cursor = connect.cursor()
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = CreateDepartmentForm(request.POST)
+        
+        # check whether it's valid:
+        if form.is_valid():
+    
+            query = f"INSERT INTO adventureworks2008r2_humanresources.department (name, group_name, modified_date) \
+                    VALUES ('{form.cleaned_data['name']}', '{form.cleaned_data['group_name']}', '{datetime.datetime.now()}');"
+            cursor.execute(query)
+            connect.commit()
+
+            messages.info(request, 'Create sucessfully')
+            return HttpResponseRedirect(reverse('departments'))
+        else:
+            messages.info(request, 'Can not update data (data invalid)')
+            return HttpResponseRedirect(reverse('departments'))
+    
+    # if a GET (or any other method) we'll create a blank form
+    elif request.method == 'GET':
+        # Query a table using the Cursor
+        form_data = CreateDepartmentForm()
+
+        return render(request, 'create_department.html', {'form': form_data})

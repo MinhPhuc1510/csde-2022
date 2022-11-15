@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import EmployeeView, DetailEmployeeView, DepartmentView, delete_employee, alert_delete, update_employee, update_employee_department
+
+from .views import (DepartmentView, DetailEmployeeView, EmployeeView,
+                    alert_delete, delete_employee, update_employee,
+                    update_employee_department, create_department)
 
 urlpatterns = [
 
@@ -10,4 +13,5 @@ urlpatterns = [
     path('humanresources/employees/<int:id>/form', update_employee, name='form_employee'),
     path('humanresources/employees-department/<int:id>/form', update_employee_department, name='form_department_employee'),
     path('humanresources/departments', DepartmentView.as_view(), name='departments'),
+    path('humanresources/departments/create', create_department, name='create_department'),
 ]
