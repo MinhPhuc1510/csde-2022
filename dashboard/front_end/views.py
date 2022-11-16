@@ -3,7 +3,8 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
-
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 # Create your views here.
 def index(request):
   
@@ -16,7 +17,6 @@ def home(request):
   context = {'iframe': iframe}
   return render(request, 'home.html', context)
 
-
 def user_login(request):
     if request.method == 'POST':
         # Process the request if posted data are available
@@ -28,7 +28,7 @@ def user_login(request):
             # Save session as cookie to login the user
             login(request, user)
             # Success, now let's login the user.
-            return render(request, 'home.html')
+            return HttpResponseRedirect(reverse('dashboard'))
         else:
             # Incorrect credentials, let's throw an error to the screen.
             return render(request, 'login.html', {'error_message': 'Incorrect username and / or password.'})
