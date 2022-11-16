@@ -357,3 +357,33 @@ def create_department(request):
         form_data = CreateDepartmentForm()
 
         return render(request, 'create_department.html', {'form': form_data})
+
+@permission_classes([IsAuthenticated])
+def create_department(request):
+    # if this is a POST request we need to process the form data
+
+    cursor = connect.cursor()
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = CreateDepartmentForm(request.POST)
+        
+        # check whether it's valid:
+        if form.is_valid():
+    
+            query = f"INSERT INTO adventureworks2008r2_humanresources.department (name, group_name, modified_date) \
+                    VALUES ('{form.cleaned_data['name']}', '{form.cleaned_data['group_name']}', '{datetime.datetime.now()}');"
+            cursor.execute(query)
+            connect.commit()
+
+            messages.info(request, 'Create sucessfully')
+            return HttpResponseRedirect(reverse('departments'))
+        else:
+            messages.info(request, 'Can not update data (data invalid)')
+            return HttpResponseRedirect(reverse('departments'))
+    
+    # if a GET (or any other method) we'll create a blank form
+    elif request.method == 'GET':
+        # Query a table using the Cursor
+        form_data = CreateDepartmentForm()
+
+        return render(request, 'create_department.html', {'form': form_data})
